@@ -1,0 +1,28 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}Richmond.com public salaries | {% endblock %}
+
+{% block head %}
+	<style>
+		div.jumbotron { margin-top: 40px; }
+	</style>
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+	<div class="container">
+		<h1>Richmond.com public salaries</h1>
+	</div>
+	</div>
+
+	<div class="container">
+		<div class="col-md-8">
+
+		<h2><a href="/salaries/local">Local salaries</a></h2>
+		<h2><a href="/salaries/state">State salaries</a></h2>
+		</div>
+	</div>
+
+{% endblock %}

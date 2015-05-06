@@ -1,0 +1,53 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}World-Herald coverage of public salaries | {% endblock %}
+
+{% block head %}
+	<style>
+		div.jumbotron { margin-top: 40px; }
+	</style>
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+	<div class="container">
+		<h1>Omaha World-Herald coverage</h1>
+	</div>
+	</div>
+
+	<div class="container">
+
+		<div class="col-md-8">
+
+	<table class="table table-striped">
+	
+	<thead>
+		<tr>
+			<th>Article</th>
+			<th>Date</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		<tr>
+			<td><a href="http://www.omaha.com/apps/pbcs.dll/article?AID=/20140302/NEWS/140309788" target="_blank">OPPD salaries, perks keep staff from straying</a>, by <a href="https://twitter.com/cody_winchester" target="_blank">Cody Winchester</a></td>
+			<td>March 3, 2014</td>
+		</tr>
+	
+	<tr>
+	<td><a href="http://www.omaha.com/article/20140421/NEWS/140429833" target="_blank">Curious about government salaries? Look no further</a>, by <a href="https://twitter.com/mattwynn" target="_blank">Matt Wynn</a>
+	</td>
+	<td>
+	April 21, 2014
+	</td>
+	</tr>
+	
+	</tbody>
+</table>
+
+		</div>
+		</div>
+
+{% endblock %}

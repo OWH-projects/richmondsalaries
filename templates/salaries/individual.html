@@ -1,0 +1,244 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}{% if person.fullname %}{{ person|title }} salary{% else %}Salary{% endif %} - {{ person.job|title }} - {{ person.govt.name }} - {% endblock %}
+
+{% block head %}
+
+<link href="/media/salaries/css/ind_styles.css" rel="stylesheet">
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+	<meta property="og:title" content="{{ person|title }} - {{ person.govt.name }}" />
+	<meta property="og:type" content="article" />
+	<meta property="og:description" content="Job title: {{ person.job }} in the {{ person.dept }} department.<br /> {{ person.year }} total gross pay: ${{ person.total_gross|floatformat:0|intcomma }}" />
+	<meta property="og:image" content="" />
+	<meta property="og:site_name" content="Richmond.com Public Salaries" />
+
+<style>
+
+.legitem {margin-bottom:5px; font-size:0.8em; text-transform:uppercase; padding:3px;}
+
+</style>
+	
+{% endblock %}
+
+
+{% block content %}
+
+
+	<div class="jumbotron">
+	<div class="container">
+		<h1><a id="persongovt" href="/salaries/{{ person.bigtype }}/{{ person.govslug }}">{{ person.govt }}</a></h1>
+		<h3 class="gray"><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}">{{ person.dept }}</a></h3>
+	</div>
+	</div>
+	
+	<div class="container">
+
+		<div class="col-md-7">
+
+		<!-- row1 -->
+		<div class="row">
+                <img src="{{ person.photo }}">
+			<h1>{% if person.fullname %}<span id="personhed">{{ person.fullname|title }}{% else %}(Name withheld){% endif %}</span> <span class="small" id="personjob">{{ person.job }}</span></h1>
+			{% if person.total_gross < 50000 and person.status != "Elected" %}<p>Names withheld for employees making less than $50,000.</p>{% endif %}
+		</div>
+
+		<!-- row2 -->
+		<div class="row">
+			
+			
+			<div class="col-md-4 pay">
+				<div class="well">
+					<p class="small gray">{{ person.year }} total gross pay</p>
+					<h2 class="pay" id="paytotal">${{ person.total_gross|floatformat:0|intcomma }}{% if person.comments %}*{% endif %}</h2>
+					<p class="small gray">Pay components</p>	
+					<div id="piechart" style="width: 100%; height: 200px;"></div>
+					<div id="legend"></div>
+				</div>
+				<p class="share">Share this </td><td>&emsp;<a id="tweeter"><i class="fa fa-twitter"></i></a>&emsp;<a href="http://www.facebook.com/sharer.php?u=http%3A%2F%2Fdataomaha.com/salaries/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}"><i class="fa fa-facebook-square"></i></a></p>			
+			</div>	
+
+			<div class="col-md-8">		
+				
+				<div class="table-responsive">
+				<table class="table">
+					<thead><td></td></thead>
+				
+					<tbody>		
+						<tr><td>Department rank</td><td>{% for this_person in this_dept %}{% if this_person.nameslug == person.nameslug %}{{ forloop.counter }}{% endif %}{% endfor %} of {{ this_dept.count }}</td></tr>
+						<tr><td>Agency rank</td><td>{% for this_person in this_govt %}{% if this_person.nameslug == person.nameslug %}{{ forloop.counter|intcomma }}{% endif %}{% endfor %} of {{ this_govt.count|intcomma }}</td></tr>
+        				        <tr><td>% of {{ person.govt }} median</td><td>{% widthratio person.total_gross person.govt.ft_median 100 %}%</td></tr>
+						<tr><td>Status</td><td>{% if person.status == "FT" %}Full time{% endif %}{% if person.status == "PT" %}Part time{% endif %}</td></tr>
+					</tbody>	
+				</table>
+				
+				{% if person.comments %}
+				<p class="small gray">{{ person.comments|safe }}</p>
+				{% endif %}
+				
+				</div>
+            </div>
+
+		</div><!-- end row2 -->
+		</div><!-- end col-md-7 -->
+
+		<div class="col-md-4 col-md-offset-1">
+			<div class="well">
+
+				{% if more_employees.count > 1 %}
+				<h3><i class="fa fa-user"></i> More employees in this department</h3>
+		<div class="table-responsive">
+				<table class="table">
+			
+					<thead>
+						<tr><th>Name</th><th>Total pay</th></tr>
+					</thead>
+				
+					<tbody>
+						{% for person in  more_employees %}
+						<tr>
+							<td><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}">{{ person.rest|title }} {{ person.last|title }}</a></td>
+							<td>${{ person.total_gross|floatformat:0|intcomma }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+					</table>
+					</div>
+				{% endif %}
+
+
+				 <h3><i class="fa fa-th"></i> {{ person.govt.name }} departments <span class="small">({{ departments.count }})</span></h3>
+				 
+<select class="form-control" onchange="if (this.value) window.location.href='/salaries/{{ person.bigtype }}/{{person.govt.name|slugify}}/' + this.value">
+		<option value='' disabled='disabled' selected='selected'>Select a department</option>
+		{% for department in departments %}
+		<option value="{{ department.dept|slugify }}">{{ department.dept|title }}</option>
+		{% endfor %}
+	</select>
+        		
+		</div>
+		
+		<div class="well">
+
+				<h3><i class="fa fa-folder-open-o"></i> Other agencies</h3>
+        		
+			                <select class="form-control" onchange="if (this.value) window.location.href='/salaries/' + this.value">
+                		                <option value='' disabled='disabled' selected='selected'>Select an agency</option>
+                		                {% for agency in list_of_govs %}
+                        		        <option value="{{ agency.bigtype }}/{{ agency.name|slugify }}">{{ agency.name }}</option>
+                        		        {% endfor %}
+                       			</select>
+
+				<h3><i class="fa fa-search"></i> Name search</h3>
+		                        <form action="/salaries/search" method="GET">
+			                        <input type="search" class="form-control" name="q" value="{{ query|escape }}" placeholder="Search for a name">
+        		                </form>
+
+			</div><!-- end well -->
+
+			</div><!-- end col-md-4 -->
+
+		</div><!-- end container -->
+
+{% endblock %}
+
+{% block afterbody %}
+
+
+<script type="text/javascript">
+ 
+$(document).ready(function() {
+        var twit = 'https://twitter.com/intent/tweet?text=';
+        var name = encodeURIComponent($('#personhed').text());
+        var jerb = encodeURIComponent($('#personjob').text());
+        var govt = encodeURIComponent($('#persongovt').text());
+        var paytotal = encodeURIComponent($('#paytotal').text());
+        var url = encodeURIComponent(window.location);
+        $('#tweeter').attr({
+                href: twit + name + "%2C%20" + jerb + "%20at%20" + govt + "%2C" + "%20made%20" + paytotal + "%20in%202013%3A%20" + url,
+                target: "_blank"
+        })
+});
+
+var col = ['#f16d53'];
+
+{% if person.deferred > 0  %}
+col.push('#8f210c');
+{% endif %}
+{% if person.extra > 0  %}
+col.push('#ae280e');
+{% endif %}
+{% if person.additional > 0  %}
+col.push('#cd3011');
+{% endif %}
+{% if person.masters > 0  %}
+col.push('#ec3814');
+{% endif %}
+{% if person.bonus_allowances > 0  %}
+col.push('#ee5234');
+{% endif %}
+
+col.push('#fbd8d1');
+
+  google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Type', 'Amount'],
+          ['Base', {{ person.display_sal }}],
+          {% if person.deferred > 0  %}
+          ['Deferred', {{ person.deferred }}],
+          {% endif %}
+          {% if person.extra > 0  %}
+          ['Extra', {{ person.extra }}],
+          {% endif %}
+		  {% if person.additional > 0  %}
+          ['Additional benefits', {{ person.additional }}],
+          {% endif %}		  
+          {% if person.masters > 0  %}
+          ['Masters', {{ person.masters }}],
+          {% endif %}
+          {% if person.bonus_allowances > 0  %}
+          ['Bonus allowances', {{ person.bonus_allowances }}],
+          {% endif %}
+        ]);
+
+		console.log(col);
+		
+        var options = {
+		  colors: col,
+		  chartArea: {top:20, left:0,width:"100%" },
+          tooltip: {text: 'value' },
+		  backgroundColor: {fill: 'none'},
+          legend: {position: 'none'},
+		  };
+		  
+var legcontent = '<div class="legitem" style="background:#f16d53; color:#fff;">Base pay</div>{% if person.extra > 0  %}<div class="legitem" style="background:#8f210c; color:#fff;">Deferred Pay</div>{% endif %}{% if person.extra > 0  %}<div class="legitem" style="background:#ae280e; color:#fff;">Extra Pay</div>{% endif %}{% if person.additional > 0  %}<div class="legitem" style="background:#cd3011; color:#fff;">Additional Pay</div>{% endif %}{% if person.masters > 0  %}<div class="legitem" style="background:#ec3814; color:#fff;">Masters</div>{% endif %}{% if person.bonus_allowances > 0  %}<div class="legitem" style="background:#ee5234; color:#fff;">Bonus allowances</div>{% endif %}'
+
+$('#legend').html(legcontent);
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+
+        var formatter = new google.visualization.NumberFormat(
+        {prefix: '$', fractionDigits:0});
+        formatter.format(data, 1);
+
+chart.draw(data, options);
+
+     function resizeHandler () {
+        chart.draw(data, options);
+    }
+    if (window.addEventListener) {
+        window.addEventListener('resize', resizeHandler, false);
+    }
+    else if (window.attachEvent) {
+        window.attachEvent('onresize', resizeHandler);
+    }
+        
+      }
+
+</script>
+
+{% endblock %}

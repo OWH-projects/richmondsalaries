@@ -1,0 +1,226 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ govt }} employee salaries - {% endblock %}
+
+{% block head %}
+
+<link href="/media/salaries/css/gov_styles.css" rel="stylesheet">
+
+{% if other > 0 %}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+	  var total = {{ total }}
+	  console.log(total)
+	  var base = {{ base }}
+	  console.log(base)
+	  var other = {{ other }}
+	  console.log(other)
+	  console.log(base+other)
+	  var otherpct = (other / total) * 100
+	  var basepct = (base / total) * 100
+	  
+	  google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+        ['', 'Base', 'Other', { role: 'annotation' } ],
+        ['', basepct, otherpct, '']
+      ]);
+        var options = {
+          isStacked: true,
+		  colors: ['#f16d53', '#fbd8d1'],
+		  legend: 'none',
+		  hAxis: { textPosition: 'none', baselineColor: '#fff', viewWindowMode: 'maximized', gridlines: { color: '#fff'} },
+		  chartArea: {left:0, right:0, width:'100%'}        
+		  };
+
+        var chart = new google.visualization.BarChart(document.getElementById('barchart'));
+        
+		var formatter = new google.visualization.NumberFormat(
+        {suffix: '%', fractionDigits:0});
+        formatter.format(data, 1);
+		formatter.format(data, 2);
+		
+		chart.draw(data, options);		
+
+     function resizeHandler () {
+        chart.draw(data, options);
+    }
+    if (window.addEventListener) {
+        window.addEventListener('resize', resizeHandler, false);
+    }
+    else if (window.attachEvent) {
+        window.attachEvent('onresize', resizeHandler);
+    }
+        
+      }
+
+    </script>
+
+    {% endif %}
+    
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+    
+	<div class="container" style="padding-top:2em;">
+
+		<h1>{{ govt.full_name }}</h1>
+		<h3>{{ people.count|intcomma }} employees in {{ departments.count|apnumber }} departments</h3>
+	</div>
+	</div>
+
+	<div class="container">
+	<div class="row">
+	
+	<div class="col-md-4 col-md-push-8">
+		<div class="well">
+		<h3><i class="fa fa-info-circle"></i> About {{ govt }}</h3>
+		<p><strong>{{ govt.type }} serves {{ govt.population|intcomma }} people</strong></p>
+		
+		<div class="table-responsive">
+		<table class="table" id="railtable">
+		<tr><td>Total payroll</td><td>${{ total|floatformat:0|intcomma }}</td></tr>
+		<tr><td>Median FT pay</td><td>${{ govt.ft_median|floatformat:0|intcomma }}</td></tr>
+		<tr><td>Average FT pay</td><td>${{ govt.ft_avg|floatformat:0|intcomma }}</td></tr>
+		<tr><td>Highest individual pay</td><td>${{ govt.ft_max|floatformat:0|intcomma }}</td></tr>
+		</table>
+		</div>
+
+		<p><a href="{{ govt.url }}" target="_blank">Agency website</a></p>
+
+		<h3><i class="fa fa-th"></i> {{govt.name}} Departments <span class="small">({{ departments.count }})</span></h3>
+	<select class="form-control" onchange="if (this.value) window.location.href='/salaries/{{ govt.bigtype }}/{{ govt.name|slugify }}/' + this.value">
+		<option value='' disabled='disabled' selected='selected'>Select a department</option>
+		{% for department in departments %}
+		<option value="{{ department.dept|slugify }}">{{ department.dept|title }}</option>
+		{% endfor %}
+	</select>
+		
+		</div>
+		
+		<div class="well">
+
+		
+		<h3><i class="fa fa-folder-open-o"></i> Other agencies</h3>
+			<select class="form-control" onchange="if (this.value) window.location.href='/salaries/' + this.value">
+        		        <option value='' disabled='disabled' selected='selected'>Select an agency</option>
+        		        {% for agency in list_of_govs %}
+        		        <option value="{{ agency.bigtype }}/{{ agency.name|slugify }}">{{ agency.name }}</option>
+        		        {% endfor %}
+       			</select>
+
+
+		<h3><i class="fa fa-search"></i> Name search</h3>
+
+
+                        <form action="/salaries/search" method="GET">
+                        <input type="search" class="form-control" name="q" value="{{ query|escape }}" placeholder="Search for a name">
+                        </form>
+
+		</div>
+
+
+		</div><!-- /col-md-4 -->
+	
+		<div class="col-md-7 col-md-offset-1 col-md-pull-5">
+
+<div class="chart_wrapper">
+<h3>Salary distribution</h3>
+<div class="chart_div"></div>
+<div id="morestuff"></div>
+<hr/>
+</div>
+
+{% if govt.text %}
+<p>{{ govt.text }}</p>
+{% endif %}
+
+{% if other > 0 %}
+<h3>Summary of pay components
+        <br><span class="small"><strong><span style="color: #f16d53;">Base</span> | <span style="color: #f9b096;">Other</span></strong></span>
+        </h3>
+<div id="barchart" style="width: 100%; height: 50px;"></div>
+{% endif %}
+
+			{% if people.count > 100 %}
+			<input type="text" class="name-filter" placeholder="Find a person" id="search">
+			<style id="search_style"></style>
+			{% endif %}
+			
+			<div class="table-responsive">
+		<table class="table table-striped" id="namelist">
+			<thead>
+			<tr>
+				<th>Name</th>
+				<th>Department</th>
+				<th>Total gross pay</th>
+			</tr>
+			</thead>
+			<tbody id="name_search">
+			{% for person in people %}
+			<tr class="searchable" {% if person.total_gross > 50000 or person.status == "Elected" %}data-index="{{ person|slugify|lower }}"{% endif %}>
+				<td>{% if person.total_gross > 50000 or person.status == "Elected" %}<span style="display:none;">{{ person.last }}</span><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}">{{ person|title }}</a>{% if person.bigwig %}&nbsp;<a href="/salaries/positions#{{person.bigwig|slugify}}"><i class="fa fa-plus-square tip" data-toggle="tooltip" data-placement="top" title="Click to compare with other {{ person.bigwig }}s"></i></a>{% endif %}{% else %}<a href="/salaries/{{ person.govslug }}/{{ person.deptslug }}/{{ person.id }}">(Name withheld){% endif %}</td>
+				<td><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}">{{ person.dept|title }}</a></td>
+				<td>${{ person.total_gross|floatformat:0|intcomma }}</td>
+			</tr>
+			{% endfor %}
+			</tbody>
+			</table>
+			</div>
+
+		</div><!-- /col-md-7 -->
+
+		</div><!-- /row -->
+
+	</div>
+
+{% endblock %}
+{% block afterbody %}
+<script type="text/javascript" src="/media/salaries/js/jquery.flot.js"></script>
+<script type="text/javascript" src="/media/salaries/js/jquery.flot.resize.js"></script>
+
+<script type="text/javascript">
+{% if people.count > 100 %}
+	var searchStyle = document.getElementById('search_style');
+		document.getElementById('search').addEventListener('input', function() {
+			if (!this.value) {
+				searchStyle.innerHTML = "";
+			return;
+		}
+			searchStyle.innerHTML = ".searchable:not([data-index*=\"" + this.value.toLowerCase() + "\"]) { display: none; }";
+		});
+{% endif %}        
+
+var d1 = [[1, {{ under25.count }}], [2, {{ under50.count }}], [3, {{ under75.count }}], [4,{{ under100.count }}], [5,{{ under125.count }}], [6,{{ under150.count }}], [7,{{ over150.count }}] ] ;
+ 
+ $(document).ready(function() {
+    $.plot($(".chart_div"), [d1], {
+        series: {
+            bars: {
+                show: true,
+				fill: true,
+				fillColor: '#f9b096',
+				barWidth: 0.6,
+				align: "center"		
+            },
+			valueLabels: { show: true },
+            color: "#f16d53"
+        },
+		xaxis: {ticks: [[1, "<$25K<br/><strong>{{ under25.count }}</strong>"], [2, "$25K-$50K<br/><strong>{{ under50.count }}</strong>"], [3, "$50K-75K<br/><strong>{{ under75.count }}</strong>"], [4,"$75K-$100K<br/><strong>{{ under100.count }}</strong>"],[5,"$100K-$125K<br/><strong>{{ under125.count }}</strong>"],[6,"$125K-$150K<br/><strong>{{ under150.count }}</strong>"],[7,"$150K+<br/><strong>{{ over150.count }}</strong>"]]},
+        grid: {
+            borderWidth: 0.5,
+            borderColor: '#ccc',
+            color: '#ccc',
+            labelMargin: 20
+            }
+    });
+});
+   
+</script>
+
+{% endblock %}

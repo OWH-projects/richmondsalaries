@@ -1,0 +1,181 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ govt }} employee salaries, {{ dept }} department - {% endblock %}
+
+{% block head %}
+
+<link href="/media/salaries/css/dept_styles.css" rel="stylesheet">
+	
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      
+	  var total = {{ total }}
+	  console.log(total)
+	  var base = {{ base }}
+	  console.log(base)
+	  var other = {{ other }}
+	  console.log(other)
+	  var otherpct = (other / total) * 100
+	  var basepct = (base / total) * 100
+	  
+	  google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+        ['', 'Base', 'Other', { role: 'annotation' } ],
+        ['', basepct, otherpct, '']
+      ]);
+        var options = {
+          isStacked: true,
+		  colors: ['#f16d53', '#fbd8d1'],
+		  legend: 'none',
+		  hAxis: { textPosition: 'none', baselineColor: '#fff', viewWindowMode: 'maximized', gridlines: { color: '#fff'} },
+		  chartArea: {left:0, right:0, width:'100%'}        
+		  };
+
+        var chart = new google.visualization.BarChart(document.getElementById('barchart'));
+        
+		var formatter = new google.visualization.NumberFormat(
+        {suffix: '%', fractionDigits:0});
+        formatter.format(data, 1);
+		formatter.format(data, 2);
+		
+		chart.draw(data, options);		
+
+     function resizeHandler () {
+        chart.draw(data, options);
+    }
+    if (window.addEventListener) {
+        window.addEventListener('resize', resizeHandler, false);
+    }
+    else if (window.attachEvent) {
+        window.attachEvent('onresize', resizeHandler);
+    }
+        
+      }
+
+    </script>
+	
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+	<div class="container">
+
+		<h1><a href="/salaries/{{ govt.bigtype }}/{{ govt.name|slugify }}">{{ govt.full_name }}</a></h1>
+		<h3 class="gray">{{ dept }}</h3>
+
+	</div>
+	</div>
+
+
+	<div class="container">
+
+		<div class="col-md-7">
+		
+		<h3>Summary of pay components
+        <br><span class="small"><strong><span style="color: #f16d53;">Base</span> | <span style="color: #f9b096;">Other</span></strong></span>
+        </h3>
+<div id="barchart" style="width: 100%; height: 50px;"></div>
+                        {% if people.count > 50 %}
+                        <input type="text" class="name-filter" placeholder="Find a person" id="search">
+                        <style id="search_style"></style>
+                        {% endif %}
+			<div class="table-responsive">
+			<table class="table table-striped">
+			<thead>
+			<tr>
+				<th>Name</th>
+				<th>Job title</th>
+				<th>Hire date</th>
+				<th>Total gross pay</th>
+			</tr>
+			</thead>
+			<tbody>
+			{% for person in people %}
+			<tr class="searchable" {% if person.total_gross > 50000 or person.status == "Elected" %}data-index="{{ person.nameslug }}"{% endif %}>
+				<td>{% if person.total_gross > 50000 or person.status == "Elected" %}<a href="/salaries/{{ govt.bigtype }}/{{ govt|slugify }}/{{ dept|slugify }}/{{ person.nameslug }}">{{ person|title }}</a>{% if person.bigwig %}&nbsp;<a href="/salaries/positions#{{person.bigwig|slugify}}"><i class="fa fa-plus-square tip" data-toggle="tooltip" data-placement="top" title="Click to compare with other {{ person.bigwig|lower }}s"></i></a>{% endif %}{% else %}<a href="/salaries/{{ govt|slugify }}/{{ dept|slugify }}/{{ person.id }}">(Name withheld)</a>{% endif %}</td>
+				<td>{{ person.job|title }}</td>
+				<td>{{ person.hiredate }}</td>
+				<td>${{ person.total_gross|floatformat:0|intcomma }}</td>
+			</tr>
+			{% endfor %}
+			</tbody>
+			</table>
+			</div>
+
+		</div>
+
+		<div class="col-md-4 col-md-offset-1">
+
+		<div class="well">
+		<h3><i class="fa fa-info-circle"></i> About this department</h3>
+			
+			<div class="table-responsive">
+			<table class="table">
+			<thead><th></th><th></th></thead>
+			<tbody>
+			<tr><td>Employees</td><td><strong>{{ people.count|apnumber|title }} employee{{ people.count|pluralize }}</strong></td></tr>
+			<tr><td>Total department pay</td><td><strong>${{ dept_total.total|floatformat:0|intcomma }}</strong></td></tr>
+			<tr><td>Dept. percentage</td><td><strong>{% widthratio dept_total.total govt.payroll_sum 100 %}% of total</strong></td></tr>
+			</tbody>
+			</table>
+			</div>
+
+		<h3><i class="fa fa-th"></i> More {{ govt.name }} departments <span class="small">({{ departments.count }})</span></h3>
+						
+		<select class="form-control" onchange="if (this.value) window.location.href='/salaries/{{ govt.bigtype }}/{{ govt|slugify }}/' + this.value">
+		<option value='' disabled='disabled' selected='selected'>Select a department</option>
+		{% for department in departments %}
+		<option value="{{ department.dept|slugify }}">{{ department.dept|title }}</option>
+		{% endfor %}
+	</select>
+		</div>
+
+			<div class="well">
+
+        <h3><i class="fa fa-folder-open-o"></i> Other agencies</h3>
+                        <select class="form-control" onchange="if (this.value) window.location.href='/salaries/' + this.value">
+                                <option value='' disabled='disabled' selected='selected'>Select an agency</option>
+                                {% for agency in list_of_govs %}
+                                <option value="{{ agency.bigtype }}/{{ agency.name|slugify }}">{{ agency.name }}</option>
+                                {% endfor %}
+                        </select>
+
+
+		<h3><i class="fa fa-search"></i> Name search</h3>
+		
+                        <form action="/salaries/search" method="GET">
+                        <input type="search" class="form-control" name="q" value="{{ query|escape }}" placeholder="Search for a name">
+                        </form>
+
+			</div>
+			
+			</div>
+
+
+
+
+	</div>
+
+
+
+{% endblock %}
+
+{% block afterbody %}
+
+<script type="text/javascript">
+        var searchStyle = document.getElementById('search_style');
+                document.getElementById('search').addEventListener('input', function() {
+                        if (!this.value) {
+                                searchStyle.innerHTML = "";
+                        return;
+                }
+                        searchStyle.innerHTML = ".searchable:not([data-index*=\"" + this.value.toLowerCase() + "\"]) { display: none; }";
+                });
+</script>
+
+{% endblock %}
+

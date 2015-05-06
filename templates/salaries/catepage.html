@@ -1,0 +1,65 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}Top positions | {% endblock %}
+
+{% block head %}
+	<style>
+		div.jumbotron { margin-top: 40px; }
+		.anchor{display: block; height: 40px; margin-top: -50px;}
+				
+	</style>
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+	<div class="container">
+		<h1>Compare top positions</h1>
+	</div>
+	</div>
+
+	<div class="container">
+
+		<div class="col-md-7">
+
+{% regroup people by bigwig as bigwig_list %}
+
+{% for title in bigwig_list %}
+    <span class="anchor" id="{{ title.grouper|slugify }}"></span>
+	<h2>{{ title.grouper }}&ensp;&ensp;<span style="float: right; font-size: 0.6em;"><a style="color: #eee;" href="https://twitter.com/intent/tweet?text={{ title.grouper }} pay in the @OWHNews public salaries database: http://dataomaha.com/salaries/positions#{{ title.grouper|slugify }}" target="_blank"><i class="fa fa-twitter"></i></a>&emsp;<a href="http://www.facebook.com/sharer.php?u=http%3A%2F%2Fdataomaha.com/salaries/positions#{{ title.grouper|slugify }}" style="color: #eee;"><i class="fa fa-facebook-square"></i></a></span></h2>
+	<table class="table table-striped">
+		<thead>
+			<tr><th>Name</th><th>Agency</th><th>Base Salary</th><th>Total Gross</th></tr>
+		</thead>
+		<tbody>
+
+        {% for item in title.list %}
+        <tr>
+		<td><a href="/salaries/{{ item.govslug }}/{{ item.deptslug }}/{{ item.nameslug }}">{{ item.rest|title }} {{ item.last|title }}</a></td>
+		<td><a href="/salaries/{{ item.govslug }}">{{ item.govt.name }}</a></td>
+		<td>${{ item.display_sal|floatformat:0|intcomma }}</td>
+		<td>${{ item.total_gross|floatformat:0|intcomma }}</td>
+	</tr>
+        {% endfor %}
+
+	</table>
+{% endfor %}
+
+		</div>
+		
+		<div class="col-md-4 col-md-offset-1">
+			<div class="well" data-spy="affix">
+           <h4>Select to compare</h4>
+        <select class="form-control" onchange="if (this.value) window.location.href= this.value">
+		<option value='' disabled='disabled' selected='selected'>Select a job title</option>
+        {% for title in bigwig_list %}
+		<option value="#{{ title.grouper|slugify }}">{{ title.grouper }}</option>
+		{% endfor %}
+	</select>
+			</div>
+		
+		
+		</div>
+
+{% endblock %}

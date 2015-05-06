@@ -1,0 +1,230 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block head %}
+
+<style>
+#topearn th {cursor:finger; cursor:pointer}
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+	<!-- header image
+	<div class="jumbotron image" style="display:none;">
+<img src="http://i.imgur.com/SYWMJYE.jpg?1" style="width: 100%;" />
+	</div>
+    -->
+	
+	<div class="jumbotron">
+	<div class="container" style="padding-top:2em;">
+			<h1>Public employee pay</h1>
+			<p class="lead">Search the salaries of {{ emptotal|intcomma }} employees at {{ list_of_govs.count|apnumber }} public agencies in Virginia.</p>
+	</div>
+	</div>
+	
+	<div class="container" style="margin-bottom: 50px;">
+
+	<div class="well clearfix">
+	<div class="col-md-3">
+	<h3><i class="fa fa-search"></i> Search</h3>
+
+			
+                        <form action="/salaries/search" method="GET">
+                        <input type="search" class="form-control inline" name="q" value="{{ query|escape }}" placeholder="Search by employee name">
+                        </form>
+	<br>
+	<select class="form-control" onchange="if (this.value) window.location.href='/salaries/' + this.value">
+		<option value='' disabled='disabled' selected='selected'>Select an agency</option>
+		{% for agency in list_of_govs %}
+		<option value="{{ agency.bigtype }}/{{ agency.name|slugify }}">{{ agency.name }}</option>
+		{% endfor %}
+	</select>
+	<br>
+
+	</div>
+
+	<div class="col-md-8 col-md-offset-1">
+	<h3>Agencies</h3>    
+    
+<div class="table-responsive">
+	<table class="table">		
+	<thead>
+		<tr><th>Name</th><th>Type</th><th>Employees</th><th>Top pay</th><th>Median</th></tr>
+	</thead>
+	<tbody>
+	{% for agency in list_of_govs %}
+	<tr>
+		<td><a href="/salaries/{{ agency.bigtype }}/{{ agency.name|slugify }}"</a>{{ agency.name }}</a></td>
+		<td>{{ agency.type|title }}</td>
+		<td>{{ agency.salary__count|intcomma }}</td>
+		<td>${{ agency.ft_max|floatformat:0|intcomma }}</td>
+		<td>${{ agency.ft_median|floatformat:0|intcomma }}</td>
+	</tr>
+	{% endfor %}
+	</tbody>
+	</table>
+	</div>
+	</div>
+	</div>
+
+		<div id="menu-1">	
+			<h2><i class="fa fa-line-chart"></i> Top earners, 2013</h2>
+			
+			<ul class="nav nav-pills">
+				<li class="active"><a href="#all" data-toggle="tab">All</a></li>
+				{% for type in top_by_gov %}
+				<li><a href="#{{ type|slugify }}" data-toggle="tab">{{ type }}</a></li>
+				{% endfor %}
+			</ul>	
+
+			<div class="tab-content">
+			
+				<div class="tab-pane active" id="all">
+				<div class="table-responsive">
+				<table class="table table-striped" id="topearn">
+					<thead>
+						<tr><th>Name</th><th>Agency</th><th>Job</th><th style="text-align:center;">Year-end gross pay</th></tr>
+					</thead>
+					<tbody>
+						{% for person in top10 %}
+						<tr>
+						<td>{{ forloop.counter }}. {% if person.total_gross > 50000 %}<a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}">{{ person.rest|title }} {{ person.last|title }}</a>{% else %}<a href="/salaries/{{ person.govslug }}/{{ person.deptslug }}/{{ person.id }}">(Name withheld)</a>{% endif %}{% if person.bigwig %}&nbsp;<a href="/salaries/positions#{{person.bigwig|slugify}}"><i class="fa fa-plus-square tip" data-toggle="tooltip" data-placement="top" title="Click to compare with other {{ person.bigwig|lower }}s"></i></a>{% endif %}</td>
+												<td><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}">{{ person.govt.name }}</a></td>
+												<td>{{ person.job|title }}</td>
+												<td style="text-align:center;">${{ person.total_gross|floatformat:0|intcomma }}</td>
+											</tr>
+										{% endfor %}
+					</tbody>
+				</table>
+				</div>
+				</div>
+			
+			
+
+				{% for key, value in top_by_gov.items %}
+							
+				<div class="tab-pane" id="{{ key|slugify }}">
+				<div class="table-responsive">
+					<table class="table table-striped">
+						<thead>
+							<tr><th>Name</th><th>Agency</th><th>Job</th><th style="text-align:center;">Year-end gross pay</th></tr>
+						</thead>
+						<tbody>
+							{% for person in value %}
+							<tr>
+								 <td>{{ forloop.counter }}. {% if person.total_gross > 50000 %}<a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}">{{ person.rest|title }} {{ person.last|title }}</a>{% else %}<a href="/salaries/{{ person.govslug }}/{{ person.deptslug }}/{{ person.id }}">(Name withheld)</a>{% endif %}{% if person.bigwig %}&nbsp;&nbsp;<a href="/salaries/positions#{{person.bigwig|slugify}}"><i class="fa fa-plus-square tip gray" data-toggle="tooltip" data-placement="top" title="Click to compare with other {{ person.bigwig }}s"></i></a>{% endif %}								 
+								 </td>
+								 <td><a href="/salaries/{{ person.bigtype }}/{{ person.govslug }}">{{ person.govt.name }}</a></td>
+								 <td>{{ person.job|title }}</td>
+								 <td style="text-align:center;">${{ person.total_gross|floatformat:0|intcomma }}</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+					</div>
+				</div>
+					
+				{% endfor %}
+			
+			
+		</div>
+		
+		<div id="menu-2" class="visible-md visible-lg">
+       <h2><i class="fa fa-money"></i> Full-time pay &ensp;<span class="small"><span style="color: #f16d53;">Median</span> | <span style="color: #f9b096;">Average</span></span></h2>
+        <div id="chart_div" style="width: 100%; height: 280px;"></div>
+		<br>
+		<p class="small" style="color: #aaa;">Average and median are slightly different ways to evalute pay. The median salary represents the total payments made to the employee at the midpoint of all salaries. The average pay is the amount each employee would make if total payroll was divided equally. The greater the gap between average and median, the more top-heavy an organization is. This sometimes is the result of payroll with higher numbers of specialized jobs that command higher pay.</p>
+		
+		</div>
+			
+<!--
+	<h2><i class="fa fa-check-circle"></i> Elected officials</h2>
+		<div class="table-responsive">
+		<table class="table">
+		<thead>
+			<tr><th>Name</th><th>Agency</th><th>Job</th><th>Year-end gross pay</th></tr>
+		</thead>
+
+		<tbody>
+		
+			{% for person in elected %}
+			<tr>
+				<td><a href="/salaries/{{ person.govslug }}/{{ person.deptslug }}/{{ person.nameslug }}">{{ person|title }}</a>
+				{% if person.bigwig %}&nbsp;&nbsp;<a href="/salaries/positions#{{person.bigwig|slugify}}"><i class="fa fa-plus-square tip" data-toggle="tooltip" data-placement="top" title="Compare with other {{ person.bigwig|lower }}s"></i></a>{% endif %}
+				</td>
+				<td><a href="/salaries/{{ person.govslug }}">{{ person.govt.name }}</a></td>
+                <td>{{ person.job|title }}</td>
+				<td>${{ person.total_gross|floatformat:0|intcomma }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+		</table>
+		</div>
+-->
+		
+
+	
+	
+		
+    </div><!-- /.container -->
+	
+
+	
+{% endblock %}
+
+{% block afterbody %}
+
+
+<!-- bar chart code  -->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+	  
+	  google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+
+var data = new google.visualization.DataTable();
+  data.addColumn('string', 'Govt');
+  data.addColumn('number', 'Median');
+  data.addColumn('number', 'Average');
+  data.addRows([
+{% for thing in list_of_govs %}
+['{{ thing.name }}', {{ thing.ft_median }}, {{ thing.ft_avg }}]{% if not forloop.last %},{% endif %}
+{% endfor %}
+        ]);
+
+        var options = {
+          colors: ['#f16d53', '#f9b096'  ],
+          vAxis: {format:'$#,###', minValue: 0},
+          chartArea: {left:70, top:20, width:'100%', height:'85%'},
+          legend: 'none',
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+
+ var formatter = new google.visualization.NumberFormat(
+      {prefix: '$', fractionDigits:0});
+  formatter.format(data, 1);
+  formatter.format(data, 2);
+
+        chart.draw(data, options);
+        
+        function resizeHandler () {
+        chart.draw(data, options);
+    }
+    if (window.addEventListener) {
+        window.addEventListener('resize', resizeHandler, false);
+    }
+    else if (window.attachEvent) {
+        window.attachEvent('onresize', resizeHandler);
+    }
+        
+      }
+
+</script>
+
+
+{% endblock %}

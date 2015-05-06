@@ -1,0 +1,66 @@
+{% extends 'salaries/base.html' %}
+{% load humanize %}
+
+{% block title %}About | {% endblock %}
+
+{% block head %}
+	<style>
+		div.jumbotron { margin-top: 40px; }
+        </style>
+{% endblock %}
+
+{% block content %}
+
+	<div class="jumbotron">
+	<div class="container">
+		<h1>About</h1>
+	</div>
+	</div>
+
+	<div class="container">
+		
+		<div class="col-md-6">
+        <p class="lead">The World-Herald has requested calendar-year 2013 payroll data from several public agencies in Nebraska and Iowa. Citizens can use this website to inspect the salaries of employees at these agencies as they are released. The figures are current as of Dec. 31, 2013.</p>
+        
+        <p class="lead">Names have been withheld for employees making less than $50,000 a year &mdash; the median household income in Nebraska, roughly &mdash; to highlight employees with the biggest impact on payroll budgets.</p>
+		
+		<p class="lead">Pay components are divided into base salary and other compensation, which if not otherwise specified can include things like overtime, bonuses, longevity pay and uniform allowances.</p>
+		
+		</div>
+				
+				<div class="col-md-4 col-md-offset-1">
+
+			<div class="well">
+
+			<h3><i class="fa fa-search"></i> Looking for a person? Search by name</h3>
+
+		        <form action="/salaries/search" method="GET">
+		        <input type="search" class="form-control" name="q" value="{{ query|escape }}" placeholder="Search for name">
+		        </form>
+
+			<h3><i class="fa fa-folder-open-o"></i> Search by agency</h3>
+		        <select class="form-control" onchange="if (this.value) window.location.href='/salaries/' + this.value">
+
+               		<option value='' disabled='disabled' selected='selected'>Select an agency</option>
+        	        {% for agency in list_of_govs %}
+        	        <option value="{{ agency.name|slugify }}">{{ agency.name }}</option>
+        	        {% endfor %}
+		        </select>
+	
+			</div>
+            
+            <h3>Contact</h3>
+                        
+  <table class="table">
+    <tr><td>Ben Vankat</td><td><a href="https://twitter.com/bvankat" target="_blank"><i class="fa fa-twitter"></i></a> <a href="mailto:ben.vankat@owh.com"><i class="fa fa-envelope"></i></a></td></tr>
+    
+    <tr><td>Cody Winchester</td><td><a href="https://twitter.com/cody_winchester" target="_blank"><i class="fa fa-twitter"></i></a> <a href="mailto:cody.winchester@owh.com"><i class="fa fa-envelope"></i></a></td></tr>
+
+    <tr><td>Matt Wynn</td><td><a href="https://twitter.com/mattwynn" target="_blank"><i class="fa fa-twitter"></i></a> <a href="mailto:matt.wynn@owh.com"><i class="fa fa-envelope"></i></a></td></tr>
+    
+  </table>
+
+		</div>		
+		</div>
+
+{% endblock %}
